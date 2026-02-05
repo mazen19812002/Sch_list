@@ -34,6 +34,16 @@
             transform: translateY(-2px);
             box-shadow: 0 4px 15px rgba(34, 197, 94, 0.4);
         }
+        .btn-red {
+            background-color: #ef4444;
+            color: white;
+            transition: all 0.3s ease;
+        }
+        .btn-red:hover {
+            background-color: #dc2626;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4);
+        }
         .dropdown-content {
             display: none;
             position: absolute;
@@ -119,13 +129,19 @@
             <!-- Action Buttons Above Table -->
             <div class="flex flex-wrap gap-4 justify-between items-center bg-sky-50/50 p-4 rounded-2xl border border-sky-100 mb-4 shadow-sm">
                 <div class="text-sky-800 font-bold px-2 py-1">
-                    عدد المدارس المختارة: <span id="schoolCount" class="text-sky-600 text-lg">0</span>
+                    عدد المدارس المختارة: <span id="schoolCount" class="text-sky-600 text-lg font-mono">0</span>
                 </div>
-                <div class="flex gap-4 flex-grow md:flex-grow-0">
-                    <button onclick="copyTableData()" class="bg-sky-100 hover:bg-sky-200 text-sky-700 font-bold py-2 px-6 rounded-xl transition-all flex items-center gap-2 shadow-sm flex-1 md:flex-none justify-center">
+                <div class="flex flex-wrap gap-4 flex-grow md:flex-grow-0">
+                    <!-- Reset Button (Red) -->
+                    <button onclick="resetAll()" class="btn-red font-bold py-2 px-6 rounded-xl transition-all flex items-center gap-2 shadow-sm flex-1 md:flex-none justify-center hover-scale">
+                         إعادة تعيين الكل
+                    </button>
+                    <!-- Copy Button -->
+                    <button onclick="copyTableData()" class="bg-sky-100 hover:bg-sky-200 text-sky-700 font-bold py-2 px-6 rounded-xl transition-all flex items-center gap-2 shadow-sm flex-1 md:flex-none justify-center hover-scale">
                          نسخ النتائج
                     </button>
-                    <button onclick="exportToExcel()" class="btn-green font-bold py-2 px-8 rounded-xl transition-all flex items-center gap-2 shadow-lg flex-1 md:flex-none justify-center">
+                    <!-- Export Button (Green) -->
+                    <button onclick="exportToExcel()" class="btn-green font-bold py-2 px-8 rounded-xl transition-all flex items-center gap-2 shadow-lg flex-1 md:flex-none justify-center hover-scale">
                         تصدير Excel
                     </button>
                 </div>
@@ -167,7 +183,7 @@
     </footer>
 
     <script>
-        // Integrated Database (Approx 165 records)
+        // Integrated Database
         const rawData = [
             { name: "ابراهيم الشناوي الرويني الثانوية بنات", stage: "ثانوى عام", type: "رسمى" },
             { name: "ابو تمادة الابتدائية الجديدة", stage: "ابتدائى", type: "رسمى" },
@@ -391,7 +407,7 @@
                     `).join('')}
                 </div>
                 <div class="p-2 border-t border-sky-50 sticky bottom-0 bg-white">
-                    <button onclick="hideAllDropdowns()" class="w-full btn-green p-2 rounded-xl text-sm font-bold">موافق</button>
+                    <button onclick="hideAllDropdowns()" class="w-full btn-green p-2 rounded-xl text-sm font-bold shadow-md">موافق</button>
                 </div>
             `;
         }
@@ -405,6 +421,14 @@
         function clearCategory(category) {
             document.querySelectorAll(`.category-${category}`).forEach(cb => cb.checked = false);
             applyFilters();
+        }
+
+        // Reset All
+        function resetAll() {
+            nameSearch.value = '';
+            document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+            applyFilters();
+            showToast("تم إعادة تعيين كافة الفلاتر");
         }
 
         // Filter Logic
