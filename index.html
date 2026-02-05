@@ -13,6 +13,8 @@
             background-color: #f0f9ff; /* Light Blue Background */
             color: #1e293b;
             overflow-x: hidden;
+            min-height: 100vh;
+            scroll-behavior: smooth;
         }
         .thin-title {
             font-weight: 200;
@@ -61,7 +63,7 @@
             display: block;
         }
         ::-webkit-scrollbar {
-            width: 6px;
+            width: 8px;
         }
         ::-webkit-scrollbar-track {
             background: #f1f1f1;
@@ -71,9 +73,8 @@
             border-radius: 10px;
         }
         .table-container {
-            max-height: 55vh;
-            overflow-y: auto;
             border-radius: 1rem;
+            overflow: visible; 
         }
         th { font-weight: 600; font-size: 0.95rem; }
         td { font-size: 0.9rem; }
@@ -82,9 +83,50 @@
             top: 0;
             z-index: 10;
         }
+        /* Floating Nav Buttons */
+        .floating-nav {
+            position: fixed;
+            left: 20px;
+            bottom: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            z-index: 100;
+        }
+        .nav-btn {
+            width: 45px;
+            height: 45px;
+            background-color: #0ea5e9;
+            color: white;
+            border-radius: 9999px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .nav-btn:hover {
+            transform: scale(1.15);
+            background-color: #0284c7;
+        }
     </style>
 </head>
-<body class="min-h-screen flex flex-col p-2 md:p-6">
+<body class="flex flex-col p-2 md:p-6">
+
+    <!-- Floating Navigation Buttons (Left Side) -->
+    <div class="floating-nav">
+        <button onclick="window.scrollTo(0,0)" class="nav-btn" title="للأعلى">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
+            </svg>
+        </button>
+        <button onclick="window.scrollTo(0, document.body.scrollHeight)" class="nav-btn" title="للأسفل">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            </svg>
+        </button>
+    </div>
 
     <!-- Header Section -->
     <header class="text-center mb-6">
@@ -132,15 +174,12 @@
                     عدد المدارس المختارة: <span id="schoolCount" class="text-sky-600 text-lg font-mono">0</span>
                 </div>
                 <div class="flex flex-wrap gap-4 flex-grow md:flex-grow-0">
-                    <!-- Reset Button (Red) -->
                     <button onclick="resetAll()" class="btn-red font-bold py-2 px-6 rounded-xl transition-all flex items-center gap-2 shadow-sm flex-1 md:flex-none justify-center hover-scale">
                          إعادة تعيين الكل
                     </button>
-                    <!-- Copy Button -->
                     <button onclick="copyTableData()" class="bg-sky-100 hover:bg-sky-200 text-sky-700 font-bold py-2 px-6 rounded-xl transition-all flex items-center gap-2 shadow-sm flex-1 md:flex-none justify-center hover-scale">
                          نسخ النتائج
                     </button>
-                    <!-- Export Button (Green) -->
                     <button onclick="exportToExcel()" class="btn-green font-bold py-2 px-8 rounded-xl transition-all flex items-center gap-2 shadow-lg flex-1 md:flex-none justify-center hover-scale">
                         تصدير Excel
                     </button>
@@ -183,7 +222,6 @@
     </footer>
 
     <script>
-        // Integrated Database
         const rawData = [
             { name: "ابراهيم الشناوي الرويني الثانوية بنات", stage: "ثانوى عام", type: "رسمى" },
             { name: "ابو تمادة الابتدائية الجديدة", stage: "ابتدائى", type: "رسمى" },
@@ -243,7 +281,7 @@
             { name: "الشهيد مصطفى سمير بدوى الرسمية للغات", stage: "اعدادى", type: "رسمى لغات" },
             { name: "الشهيد مصطفى سمير بدوى الرسميه للغات الثانوية", stage: "ثانوى عام", type: "رسمى لغات" },
             { name: "الشهيد مصطفى هلال بالحمراوى", stage: "ثانوى عام", type: "رسمى" },
-            { name: "الشهيد نبيل فراج الاعداديه المهنيه للبنات", stage: "اعدادى مهنى", type: "رسمى" },
+            { name: "الشهيد نبيل fراج الاعداديه المهنيه للبنات", stage: "اعدادى مهنى", type: "رسمى" },
             { name: "الشهيد نجيب محى الشناوى ب", stage: "ابتدائى", type: "رسمى" },
             { name: "الشهيد نجيب محى الشناوى ع", stage: "اعدادى", type: "رسمى" },
             { name: "الشهيد هشام بركات الثانوية", stage: "ثانوى عام", type: "رسمى" },
@@ -363,7 +401,6 @@
         const typeLabel = document.getElementById('typeLabel');
         const toast = document.getElementById('toast');
 
-        // Dropdown toggle
         window.addEventListener('click', (e) => {
             if (!e.target.closest('.relative')) {
                 hideAllDropdowns();
@@ -381,7 +418,6 @@
             document.querySelectorAll('.dropdown-content').forEach(d => d.classList.remove('show'));
         }
 
-        // Init Checkboxes
         function initFilters() {
             const stages = [...new Set(rawData.map(item => item.stage))].sort();
             const types = [...new Set(rawData.map(item => item.type))].sort();
@@ -423,15 +459,14 @@
             applyFilters();
         }
 
-        // Reset All
         function resetAll() {
             nameSearch.value = '';
             document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
             applyFilters();
             showToast("تم إعادة تعيين كافة الفلاتر");
+            window.scrollTo(0,0);
         }
 
-        // Filter Logic
         function applyFilters() {
             const term = nameSearch.value.trim().toLowerCase();
             const selectedStages = Array.from(document.querySelectorAll('.category-stage:checked')).map(cb => cb.value);
@@ -457,12 +492,12 @@
 
             if (filteredData.length === 0) {
                 noResults.classList.remove('hidden');
-                document.querySelector('.table-container').classList.add('hidden');
+                document.getElementById('schoolsTable').classList.add('hidden');
                 return;
             }
 
             noResults.classList.add('hidden');
-            document.querySelector('.table-container').classList.remove('hidden');
+            document.getElementById('schoolsTable').classList.remove('hidden');
 
             filteredData.forEach((school, index) => {
                 const row = document.createElement('tr');
