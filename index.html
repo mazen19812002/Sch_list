@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مديرية التربية والتعليم بكفر الشيخ - إدارة شرق</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@200;300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Cairo', sans-serif;
+            background-color: #f0f9ff; /* Light Blue Background */
+            color: #1e293b;
+            overflow-x: hidden;
+        }
+        .thin-title {
+            font-weight: 200;
+            letter-spacing: -0.5px;
+        }
+        .hover-scale {
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .hover-scale:hover {
+            transform: scale(1.015);
+        }
+        .btn-green {
+            background-color: #22c55e;
+            color: white;
+            transition: all 0.3s ease;
+        }
+        .btn-green:hover {
+            background-color: #16a34a;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(34, 197, 94, 0.4);
+        }
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            z-index: 50;
+            width: 100%;
+            background: white;
+            border: 2px solid #bae6fd;
+            border-radius: 1.25rem;
+            max-height: 400px;
+            overflow-y: auto;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+            margin-top: 0.5rem;
+        }
+        .dropdown-content.show {
+            display: block;
+        }
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #0ea5e9;
+            border-radius: 10px;
+        }
+        .table-container {
+            max-height: 55vh;
+            overflow-y: auto;
+            border-radius: 1rem;
+        }
+        th { font-weight: 600; font-size: 0.95rem; }
+        td { font-size: 0.9rem; }
+        .sticky-header {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col p-2 md:p-6">
+
+    <!-- Header Section -->
+    <header class="text-center mb-6">
+        <h1 class="text-2xl md:text-3xl thin-title text-sky-900 mb-1">مديرية التربية والتعليم بكفر الشيخ</h1>
+        <h2 class="text-xl md:text-2xl font-bold text-sky-700">دليل مدارس إدارة شرق كفر الشيخ التعليمية</h2>
+    </header>
+
+    <!-- Main Application Card -->
+    <main class="flex-grow max-w-7xl mx-auto w-full">
+        <div class="bg-white rounded-3xl shadow-2xl p-4 md:p-8 mb-4 hover-scale border border-sky-100 relative">
+            
+            <!-- Filter Bar -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                <!-- Name Search -->
+                <div class="md:col-span-2">
+                    <label class="block text-sky-800 mb-1 font-semibold text-sm px-2">ابحث عن اسم المدرسة:</label>
+                    <input type="text" id="nameSearch" oninput="applyFilters()" placeholder="اكتب اسم المدرسة هنا لتصفية النتائج..." 
+                           class="w-full p-3.5 bg-sky-50 border-2 border-transparent focus:border-sky-400 focus:bg-white rounded-2xl outline-none transition-all text-sky-900 shadow-sm">
+                </div>
+                
+                <!-- Stage Dropdown -->
+                <div class="relative">
+                    <label class="block text-sky-800 mb-1 font-semibold text-sm px-2">المرحلة:</label>
+                    <button onclick="toggleDropdown('stageDropdown')" class="w-full p-3.5 bg-sky-50 border-2 border-transparent hover:border-sky-200 rounded-2xl text-right flex justify-between items-center text-sky-900 shadow-sm transition-all">
+                        <span id="stageLabel">كل المراحل</span>
+                        <svg class="h-5 w-5 text-sky-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                    </button>
+                    <div id="stageDropdown" class="dropdown-content p-2"></div>
+                </div>
+
+                <!-- Type Dropdown -->
+                <div class="relative">
+                    <label class="block text-sky-800 mb-1 font-semibold text-sm px-2">التبعية:</label>
+                    <button onclick="toggleDropdown('typeDropdown')" class="w-full p-3.5 bg-sky-50 border-2 border-transparent hover:border-sky-200 rounded-2xl text-right flex justify-between items-center text-sky-900 shadow-sm transition-all">
+                        <span id="typeLabel">كل الأنواع</span>
+                        <svg class="h-5 w-5 text-sky-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                    </button>
+                    <div id="typeDropdown" class="dropdown-content p-2"></div>
+                </div>
+            </div>
+
+            <!-- Action Buttons Above Table -->
+            <div class="flex flex-wrap gap-4 justify-between items-center bg-sky-50/50 p-4 rounded-2xl border border-sky-100 mb-4 shadow-sm">
+                <div class="text-sky-800 font-bold px-2 py-1">
+                    عدد المدارس المختارة: <span id="schoolCount" class="text-sky-600 text-lg">0</span>
+                </div>
+                <div class="flex gap-4 flex-grow md:flex-grow-0">
+                    <button onclick="copyTableData()" class="bg-sky-100 hover:bg-sky-200 text-sky-700 font-bold py-2 px-6 rounded-xl transition-all flex items-center gap-2 shadow-sm flex-1 md:flex-none justify-center">
+                         نسخ النتائج
+                    </button>
+                    <button onclick="exportToExcel()" class="btn-green font-bold py-2 px-8 rounded-xl transition-all flex items-center gap-2 shadow-lg flex-1 md:flex-none justify-center">
+                        تصدير Excel
+                    </button>
+                </div>
+            </div>
+
+            <!-- Table Section -->
+            <div class="table-container border border-sky-100 shadow-inner bg-sky-50/10">
+                <table id="schoolsTable" class="w-full text-right border-collapse">
+                    <thead>
+                        <tr class="bg-sky-600 text-white sticky-header">
+                            <th class="p-4 border-b w-16 text-center">م</th>
+                            <th class="p-4 border-b">اسم المدرسة</th>
+                            <th class="p-4 border-b">المرحلة</th>
+                            <th class="p-4 border-b">التبعية</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody" class="text-sky-900 bg-white">
+                        <!-- Rows populated by JS -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Empty Results Placeholder -->
+            <div id="noResults" class="hidden flex flex-col items-center py-16 text-sky-300">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 9.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                <p class="text-xl font-bold">عذراً، لا يوجد نتائج تطابق اختياراتك</p>
+            </div>
+        </div>
+    </main>
+
+    <!-- Success Toast -->
+    <div id="toast" class="fixed bottom-24 left-1/2 transform -translate-x-1/2 bg-sky-900 text-white px-10 py-4 rounded-2xl shadow-2xl opacity-0 transition-opacity pointer-events-none z-50 font-bold">
+        تمت العملية بنجاح!
+    </div>
+
+    <!-- Mandatory Footer -->
+    <footer class="mt-auto py-6 border-t border-sky-100 text-center">
+        <p class="text-sky-800 thin-title text-sm md:text-base">All rights are reserved to Dr. Mazen Badawy – Doctorate of English Teaching & Testing</p>
+    </footer>
+
+    <script>
+        // Integrated Database (Approx 165 records)
+        const rawData = [
+            { name: "ابراهيم الشناوي الرويني الثانوية بنات", stage: "ثانوى عام", type: "رسمى" },
+            { name: "ابو تمادة الابتدائية الجديدة", stage: "ابتدائى", type: "رسمى" },
+            { name: "ابو طبل ب تعليم اساسي", stage: "ابتدائى", type: "رسمى" },
+            { name: "ابو عمر الابتدائية", stage: "ابتدائى", type: "رسمى" },
+            { name: "ابوتمادة الابتدائية", stage: "ابتدائى", type: "رسمى" },
+            { name: "ابوعمرع تعليم اساسي", stage: "اعدادى", type: "رسمى" },
+            { name: "ادريجة تعليم اساسى", stage: "ابتدائى", type: "رسمى" },
+            { name: "ادريجة ع للتعليم الاساسى", stage: "اعدادى", type: "رسمى" },
+            { name: "اسكندر ب", stage: "ابتدائى", type: "رسمى" },
+            { name: "الاتحاد الابتدائية", stage: "ابتدائى", type: "رسمى" },
+            { name: "الاتحاد الاعدادية المشتركة", stage: "اعدادى", type: "رسمى" },
+            { name: "الامل للصم الاعدادى المهنى", stage: "اعدادى مهنى", type: "رسمى" },
+            { name: "الامل للصم ب", stage: "ابتدائى صم", type: "رسمى" },
+            { name: "الامل للصم ث", stage: "ثانوي فني صم", type: "رسمى" },
+            { name: "التجريبية للمعلمات ب", stage: "ابتدائى", type: "رسمى" },
+            { name: "التربية الفكرية ب", stage: "ابتدائى فكرية", type: "رسمى" },
+            { name: "التربية الفكرية ع", stage: "اعداد مهنى فكرية", type: "رسمى" },
+            { name: "الحديثة الابتدائية تعليم أساسي", stage: "ابتدائى", type: "رسمى" },
+            { name: "الحديثة الاعدادية تعليم أساسي", stage: "اعدادى", type: "رسمى" },
+            { name: "الحمراوى النموذجية", stage: "ابتدائى", type: "رسمى" },
+            { name: "الحمراوى ع بنات تعليم اساسى", stage: "اعدادى", type: "رسمى" },
+            { name: "الحمراوى للتعليم الاساسى ب", stage: "ابتدائى", type: "رسمى" },
+            { name: "الخضيرى الابتدائية ت.أ", stage: "ابتدائى", type: "رسمى" },
+            { name: "الخضيري ع تعليم اساسي", stage: "اعدادى", type: "رسمى" },
+            { name: "الدماطية تعليم اساسى", stage: "ابتدائى", type: "رسمى" },
+            { name: "الدماطيه الاعدادية المشتركة", stage: "اعدادى", type: "رسمى" },
+            { name: "الروضة الخليلة تعليم اساسى", stage: "ابتدائى", type: "رسمى" },
+            { name: "الروضة ع للتعليم الاساسى", stage: "اعدادى", type: "رسمى" },
+            { name: "الزهراء الابتدائية", stage: "ابتدائى", type: "رسمى" },
+            { name: "الزهور التجريبية الابتدائية لغات", stage: "ابتدائى", type: "رسمى لغات" },
+            { name: "الزهورالرسميه للغات الاعدادية", stage: "اعدادى", type: "رسمى لغات" },
+            { name: "السعدى ب للتعليم الاساسى", stage: "ابتدائى", type: "رسمى" },
+            { name: "السعدي ع تعليم أساسي", stage: "اعدادى", type: "رسمى" },
+            { name: "السعيدية ع بنات الجديدة", stage: "اعدادى", type: "رسمى" },
+            { name: "السعيدية ع بنات القديمة", stage: "اعدادى", type: "رسمى" },
+            { name: "السلام الابتدائية المشتركة", stage: "ابتدائى", type: "رسمى" },
+            { name: "السيوفي الابتدائيه للتعليم الاساسي", stage: "ابتدائى", type: "رسمى" },
+            { name: "السيوفي الاعداديه المشتركه", stage: "اعدادى", type: "رسمى" },
+            { name: "الشمارقة الاعدادية", stage: "اعدادى", type: "رسمى" },
+            { name: "الشهيد ابراهيم ابراهيم شمس الدين ب - شنو", stage: "ابتدائى", type: "رسمى" },
+            { name: "الشهيد احمد فتحي عدوي الابتدائية", stage: "ابتدائى", type: "رسمى" },
+            { name: "الشهيد احمدالسيد محمد السيد", stage: "ابتدائى", type: "رسمى" },
+            { name: "الشهيد احمدالسيد محمدالسيد", stage: "اعدادى", type: "رسمى" },
+            { name: "الشهيد جميل محمدمحمود العرابي", stage: "ابتدائى", type: "رسمى" },
+            { name: "الشهيد حمدى ابراهيم ع بنين", stage: "اعدادى", type: "رسمى" },
+            { name: "الشهيد عبد المنعم رياض", stage: "ثانوى عام", type: "رسمى" },
+            { name: "الشهيد عبد المنعم رياض - خدمات", stage: "ثانوى عام", type: "خدمات" },
+            { name: "الشهيد عزت الشافعى الثانوية", stage: "ثانوى عام", type: "رسمى" },
+            { name: "الشهيد عطية العافى ب بالشمارقة", stage: "ابتدائى", type: "رسمى" },
+            { name: "الشهيد محمد الشحات نصر غازى الابتدائية", stage: "ابتدائى", type: "رسمى" },
+            { name: "الشهيد محمد قاسم عبدالوهاب الاعداديه - ابوطبل", stage: "اعدادى", type: "رسمى" },
+            { name: "الشهيد محمدابراهيم ابوالمجد", stage: "ابتدائى", type: "رسمى" },
+            { name: "الشهيد محمدعبدالحميدفؤاد", stage: "ابتدائى", type: "رسمى" },
+            { name: "الشهيد محمود أحمد قحوف الأعدادية بمتبول", stage: "اعدادى", type: "رسمى" },
+            { name: "الشهيد مصطفى سمير بدوى الرسمية للغات", stage: "ابتدائى", type: "رسمى لغات" },
+            { name: "الشهيد مصطفى سمير بدوى الرسمية للغات", stage: "اعدادى", type: "رسمى لغات" },
+            { name: "الشهيد مصطفى سمير بدوى الرسميه للغات الثانوية", stage: "ثانوى عام", type: "رسمى لغات" },
+            { name: "الشهيد مصطفى هلال بالحمراوى", stage: "ثانوى عام", type: "رسمى" },
+            { name: "الشهيد نبيل فراج الاعداديه المهنيه للبنات", stage: "اعدادى مهنى", type: "رسمى" },
+            { name: "الشهيد نجيب محى الشناوى ب", stage: "ابتدائى", type: "رسمى" },
+            { name: "الشهيد نجيب محى الشناوى ع", stage: "اعدادى", type: "رسمى" },
+            { name: "الشهيد هشام بركات الثانوية", stage: "ثانوى عام", type: "رسمى" },
+            { name: "الشهيد هشام بركات الثانوية للبنات - خدمات", stage: "ثانوى عام", type: "خدمات" },
+            { name: "الشهيداحمدالديهي - الثانوية فصول ملحقة", stage: "ثانوى عام", type: "رسمى" },
+            { name: "الشهيداحمدسعد الدين الديهي الاعداديه بشنو", stage: "اعدادى", type: "رسمى" },
+            { name: "الشهيدعبداللاه عبدالنبي ابوزيد", stage: "ابتدائى", type: "رسمى" },
+            { name: "الطايفة الابتدائية", stage: "ابتدائى", type: "رسمى" },
+            { name: "الطايفة الاعدادية المشتركة", stage: "اعدادى", type: "رسمى" },
+            { name: "الطفل المتطور", stage: "الطفل المتطور", type: "الطفل المتطور" },
+            { name: "العونة الابتدائية", stage: "ابتدائى", type: "رسمى" },
+            { name: "العونة الاعدادية", stage: "اعدادى", type: "رسمى" },
+            { name: "القرضا الابتدائية", stage: "ابتدائى", type: "رسمى" },
+            { name: "القرضا الاعدادية", stage: "اعدادى", type: "رسمى" },
+            { name: "القرضا الرسمية الدولية", stage: "ابتدائى", type: "رسمى دولى" },
+            { name: "القنطرة البيضاء الابتدائية", stage: "ابتدائى", type: "رسمى" },
+            { name: "القنطرة الجديدة الابتدائية", stage: "ابتدائى", type: "رسمى" },
+            { name: "المتفوقين للعلوم والتكنولوجيا", stage: "ثانوى عام", type: "رسمى" },
+            { name: "المرابعين الابتدائية تعليم أساسي", stage: "ابتدائى", type: "رسمى" },
+            { name: "المرابعين الثانوية", stage: "ثانوى عام", type: "رسمى" },
+            { name: "المرابعين ع للتعليم الاساسى", stage: "اعدادى", type: "رسمى" },
+            { name: "المعلم ابراهيم الاعداديه", stage: "اعدادى", type: "رسمى" },
+            { name: "المعمارية الزخرفية العسكرية - خدمات", stage: "صناعى", type: "خدمات" },
+            { name: "المنتزة الرسمية للغات ابتدائى", stage: "ابتدائى", type: "رسمى لغات" },
+            { name: "المنتزة تعليم اساسى الاعدادية", stage: "اعدادى", type: "رسمى" },
+            { name: "المنتزه الابتدائية تعليم أساسي", stage: "ابتدائى", type: "رسمى" },
+            { name: "النور للمكفوفين ب", stage: "ابتدائى مكفوفين", type: "رسمى" },
+            { name: "النور للمكفوفين ث", stage: "ثانوى عام مكفوفين", type: "رسمى" },
+            { name: "النور للمكفوفين ع", stage: "اعدادى عام مكفوفين", type: "رسمى" },
+            { name: "الوحدة العربية ب", stage: "ابتدائى", type: "رسمى" },
+            { name: "بطيطة الابتدائية", stage: "ابتدائى", type: "رسمى" },
+            { name: "بطيطه الاعداديه المشـتركه", stage: "اعدادى", type: "رسمى" },
+            { name: "بطيطه الثانوية المشتركة", stage: "ثانوى عام", type: "رسمى" },
+            { name: "جمال عبد الناصر الابتدائية", stage: "ابتدائى", type: "رسمى" },
+            { name: "حبيب عثمان تعليم اساسى ب", stage: "ابتدائى", type: "رسمى" },
+            { name: "حبيب عثمان ع تعليم اساسى", stage: "اعدادى", type: "رسمى" },
+            { name: "حسن كلبوش الثانوية", stage: "ثانوى عام", type: "رسمى" },
+            { name: "حسني محمد زهرة الأعدادية بنين بالحمراوي", stage: "اعدادى", type: "رسمى" },
+            { name: "حليس تعليم اساسى ب", stage: "ابتدائى", type: "رسمى" },
+            { name: "حليس ع للتعليم الاساسى", stage: "اعدادى", type: "رسمى" },
+            { name: "دفرية الابتدائية", stage: "ابتدائى", type: "رسمى" },
+            { name: "دفرية الابتدائية الجديدة", stage: "ابتدائى", type: "رسمى" },
+            { name: "دفريه الاعداديه المشتركه", stage: "اعدادى", type: "رسمى" },
+            { name: "دقلت الابتدائية", stage: "ابتدائى", type: "رسمى" },
+            { name: "دقلت الاعدادية", stage: "اعدادى", type: "رسمى" },
+            { name: "رزقة اماى ب", stage: "ابتدائى", type: "رسمى" },
+            { name: "رزقة أماى الاعداديه المشتركة", stage: "اعدادى", type: "رسمى" },
+            { name: "زراعة ميت علوان الثانويه", stage: "ثانوى عام", type: "رسمى" },
+            { name: "زراعة ميت علوان ب تعليم اساسى", stage: "ابتدائى", type: "رسمى" },
+            { name: "زراعة ميت علوان ع ت.أ", stage: "اعدادى", type: "رسمى" },
+            { name: "سخا الابتدائية", stage: "ابتدائى", type: "رسمى" },
+            { name: "سخا الابتدائيه الجديده", stage: "ابتدائى", type: "رسمى" },
+            { name: "سخا الاعدادية بنين", stage: "اعدادى", type: "رسمى" },
+            { name: "سخا الثانويه بنات", stage: "ثانوى عام", type: "رسمى" },
+            { name: "سخا تعليم اساسى ب", stage: "ابتدائى", type: "رسمى" },
+            { name: "سخا ع بنات تعليم أساسي", stage: "اعدادى", type: "رسمى" },
+            { name: "سيدى جمال الابتدائية", stage: "ابتدائى", type: "رسمى" },
+            { name: "شنو الابتدائية القديمة", stage: "ابتدائى", type: "رسمى" },
+            { name: "شهيد السلام الثانوية", stage: "ثانوى عام", type: "رسمى" },
+            { name: "عبد الله السيد ب", stage: "ابتدائى", type: "رسمى" },
+            { name: "عبد الله النحاس الإبتدائية", stage: "ابتدائى", type: "رسمى" },
+            { name: "عبدالله السيد تعليم اساسي ع", stage: "اعدادى", type: "رسمى" },
+            { name: "عزبة خميس الابتدائية", stage: "ابتدائى", type: "رسمى" },
+            { name: "عزبة سـلام الاعدادية المشتركة", stage: "اعدادى", type: "رسمى" },
+            { name: "عزبة سلام ب تعليم اساسى", stage: "ابتدائى", type: "رسمى" },
+            { name: "على عبد الشكور الاعدادية للغات", stage: "اعدادى", type: "رسمى لغات" },
+            { name: "على عبد الشكور الثانوية للغات", stage: "ثانوى عام", type: "رسمى لغات" },
+            { name: "على عبد الشكور الرسمية للغات الثانوية", stage: "ثانوى عام", type: "رسمى لغات" },
+            { name: "على عبد الشكور ع بنين ت.أ", stage: "اعدادى", type: "رسمى" },
+            { name: "على عبدالشكور الإبتدائية لغات", stage: "ابتدائى", type: "رسمى لغات" },
+            { name: "علي عبد الشكور ب تعليم أساسي", stage: "ابتدائى", type: "رسمى" },
+            { name: "قراجة ب للتعليم الاساسى", stage: "ابتدائى", type: "رسمى" },
+            { name: "قراجه ع للتعليم الاساسى", stage: "اعدادى", type: "رسمى" },
+            { name: "كفر الشيخ التجارية بنات", stage: "تجارى", type: "رسمى" },
+            { name: "كفر الشيخ التجارية بنين", stage: "تجارى", type: "رسمى" },
+            { name: "كفر الشيخ الثانوية الزراعية", stage: "زراعى", type: "رسمى" },
+            { name: "كفر الشيخ الصناعية بنات", stage: "صناعى", type: "رسمى" },
+            { name: "كفر الشيخ المعمارية الزخرفية", stage: "صناعى", type: "رسمى" },
+            { name: "كفر الشيخ ع بنات القديمة", stage: "اعدادى", type: "رسمى" },
+            { name: "كفر دفرية ب", stage: "ابتدائى", type: "رسمى" },
+            { name: "كفر دفريه ع ت.أ", stage: "اعدادى", type: "رسمى" },
+            { name: "كفر عسكر الابتدائية المشتركة", stage: "ابتدائى", type: "رسمى" },
+            { name: "كفرالشيخ الثانوية الزراعية - خدمات", stage: "زراعى", type: "خدمات" },
+            { name: "كفرالشيخ الثانوية الصناعية بنات - خدمات", stage: "صناعى", type: "خدمات" },
+            { name: "كفرالشيخ الصناعية بنات مهني", stage: "صناعى مهنى", type: "رسمى" },
+            { name: "كفرالشيخ ث الزراعية المهنيه", stage: "زراعى مهنى", type: "رسمى" },
+            { name: "كفرالشيخ ث المعماريه المهنيه", stage: "صناعى مهنى", type: "رسمى" },
+            { name: "كفرالطايفة الابتدائية", stage: "ابتدائى", type: "رسمى" },
+            { name: "كفرالطايفه الاعداديه المشتركه", stage: "اعدادى", type: "رسمى" },
+            { name: "كفرالمرابعين ب تعليم اساسى", stage: "ابتدائى", type: "رسمى" },
+            { name: "كفرالمرابعين ع للتعليم الاساسى", stage: "اعدادى", type: "رسمى" },
+            { name: "مجمع أريمون التعليمى (ابتدائي)", stage: "ابتدائى", type: "رسمى" },
+            { name: "مجمع أريمون التعليمي ( اعدادى )", stage: "اعدادى", type: "رسمى" },
+            { name: "مجمع أريمون التعليمي ( ثانوى )", stage: "ثانوى عام", type: "رسمى" },
+            { name: "محمود السيد شحاتة الابتدائية ت . أ", stage: "ابتدائى", type: "رسمى" },
+            { name: "محمود السيد شحاتة الاعدادية ت . أ", stage: "اعدادى", type: "رسمى" },
+            { name: "مدرسة حسن كلبوش الثانوية - خدمات", stage: "ثانوى عام", type: "خدمات" },
+            { name: "مسير الاعداديه بنين", stage: "اعدادى", type: "رسمى" },
+            { name: "مسير الجديدة ب", stage: "ابتدائى", type: "رسمى" },
+            { name: "ميزار تعليم اساسى ب", stage: "ابتدائى", type: "رسمى" },
+            { name: "ميزار ع للتعليم الاساسى", stage: "اعدادى", type: "رسمى" },
+            { name: "نصرة تعليم أساسى ب", stage: "ابتدائى", type: "رسمى" },
+            { name: "نصره ع للتعليم الاساسى", stage: "اعدادى", type: "رسمى" },
+            { name: "وحدة مسير ب ت.أ", stage: "ابتدائى", type: "رسمى" },
+            { name: "وحدة مسير ع للتعليم الاساسى", stage: "اعدادى", type: "رسمى" }
+        ];
+
+        let filteredData = [...rawData];
+
+        const tableBody = document.getElementById('tableBody');
+        const stageDropdown = document.getElementById('stageDropdown');
+        const typeDropdown = document.getElementById('typeDropdown');
+        const nameSearch = document.getElementById('nameSearch');
+        const noResults = document.getElementById('noResults');
+        const schoolCount = document.getElementById('schoolCount');
+        const stageLabel = document.getElementById('stageLabel');
+        const typeLabel = document.getElementById('typeLabel');
+        const toast = document.getElementById('toast');
+
+        // Dropdown toggle
+        window.addEventListener('click', (e) => {
+            if (!e.target.closest('.relative')) {
+                hideAllDropdowns();
+            }
+        });
+
+        function toggleDropdown(id) {
+            const dropdown = document.getElementById(id);
+            const isOpen = dropdown.classList.contains('show');
+            hideAllDropdowns();
+            if (!isOpen) dropdown.classList.add('show');
+        }
+
+        function hideAllDropdowns() {
+            document.querySelectorAll('.dropdown-content').forEach(d => d.classList.remove('show'));
+        }
+
+        // Init Checkboxes
+        function initFilters() {
+            const stages = [...new Set(rawData.map(item => item.stage))].sort();
+            const types = [...new Set(rawData.map(item => item.type))].sort();
+            populateDropdown(stageDropdown, stages, 'stage');
+            populateDropdown(typeDropdown, types, 'type');
+            applyFilters();
+        }
+
+        function populateDropdown(container, items, category) {
+            container.innerHTML = `
+                <div class="flex justify-between p-2 border-b border-sky-50 mb-1 sticky top-0 bg-white z-20">
+                    <button onclick="clearCategory('${category}')" class="text-xs text-red-500 font-bold hover:underline">مسح الكل</button>
+                    <span class="text-xs text-sky-400 font-semibold">تحديد الخيارات</span>
+                </div>
+                <div class="max-h-64 overflow-y-auto">
+                    ${items.map(item => `
+                        <div class="flex items-center gap-3 p-2.5 hover:bg-sky-50 rounded-xl cursor-pointer transition-colors" 
+                             onclick="handleCheckboxClick(this, '${category}')">
+                            <input type="checkbox" value="${item}" class="category-${category} w-4.5 h-4.5 text-sky-600 border-sky-300 rounded-md focus:ring-sky-500" 
+                                   onclick="event.stopPropagation(); applyFilters();">
+                            <span class="text-sm font-semibold">${item}</span>
+                        </div>
+                    `).join('')}
+                </div>
+                <div class="p-2 border-t border-sky-50 sticky bottom-0 bg-white">
+                    <button onclick="hideAllDropdowns()" class="w-full btn-green p-2 rounded-xl text-sm font-bold">موافق</button>
+                </div>
+            `;
+        }
+
+        function handleCheckboxClick(element, category) {
+            const cb = element.querySelector('input');
+            cb.checked = !cb.checked;
+            applyFilters();
+        }
+
+        function clearCategory(category) {
+            document.querySelectorAll(`.category-${category}`).forEach(cb => cb.checked = false);
+            applyFilters();
+        }
+
+        // Filter Logic
+        function applyFilters() {
+            const term = nameSearch.value.trim().toLowerCase();
+            const selectedStages = Array.from(document.querySelectorAll('.category-stage:checked')).map(cb => cb.value);
+            const selectedTypes = Array.from(document.querySelectorAll('.category-type:checked')).map(cb => cb.value);
+
+            stageLabel.textContent = selectedStages.length > 0 ? `مختار (${selectedStages.length})` : "كل المراحل";
+            typeLabel.textContent = selectedTypes.length > 0 ? `مختار (${selectedTypes.length})` : "كل الأنواع";
+
+            filteredData = rawData.filter(item => {
+                const matchName = item.name.toLowerCase().includes(term);
+                const matchStage = selectedStages.length === 0 || selectedStages.includes(item.stage);
+                const matchType = selectedTypes.length === 0 || selectedTypes.includes(item.type);
+                return matchName && matchStage && matchType;
+            });
+
+            filteredData.sort((a, b) => a.name.localeCompare(b.name, 'ar'));
+            renderTable();
+        }
+
+        function renderTable() {
+            tableBody.innerHTML = '';
+            schoolCount.textContent = filteredData.length;
+
+            if (filteredData.length === 0) {
+                noResults.classList.remove('hidden');
+                document.querySelector('.table-container').classList.add('hidden');
+                return;
+            }
+
+            noResults.classList.add('hidden');
+            document.querySelector('.table-container').classList.remove('hidden');
+
+            filteredData.forEach((school, index) => {
+                const row = document.createElement('tr');
+                row.className = 'border-b border-sky-50 hover:bg-sky-50/70 transition-colors group';
+                row.innerHTML = `
+                    <td class="p-4 text-center text-sky-500 font-bold bg-sky-50/20">${index + 1}</td>
+                    <td class="p-4 font-bold text-sky-900">${school.name}</td>
+                    <td class="p-4 text-sky-600"><span class="bg-sky-100 px-3 py-1 rounded-lg font-bold">${school.stage}</span></td>
+                    <td class="p-4 text-sky-600"><span class="bg-green-100 text-green-700 px-3 py-1 rounded-lg font-bold">${school.type}</span></td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        function exportToExcel() {
+            if (filteredData.length === 0) {
+                showToast("لا يوجد بيانات محددة للتصدير");
+                return;
+            }
+            const worksheet = XLSX.utils.json_to_sheet(filteredData.map((s, i) => ({
+                "م": i + 1,
+                "اسم المدرسة": s.name,
+                "المرحلة": s.stage,
+                "التبعية": s.type
+            })));
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "النتائج المحددة");
+            XLSX.writeFile(workbook, "Filtered_Schools_Selection.xlsx");
+            showToast("تم تصدير الاختيار الحالي بنجاح");
+        }
+
+        function copyTableData() {
+            if (filteredData.length === 0) {
+                showToast("الجدول فارغ حالياً");
+                return;
+            }
+            const table = document.getElementById('schoolsTable');
+            const range = document.createRange();
+            range.selectNode(table);
+            window.getSelection().removeAllRanges();
+            window.getSelection().addRange(range);
+            try {
+                document.execCommand('copy');
+                showToast("تم نسخ النتائج المحددة بنجاح");
+            } catch (err) {
+                showToast("فشل النسخ");
+            }
+            window.getSelection().removeAllRanges();
+        }
+
+        function showToast(msg) {
+            toast.textContent = msg;
+            toast.style.opacity = '1';
+            setTimeout(() => toast.style.opacity = '0', 2500);
+        }
+
+        window.onload = initFilters;
+    </script>
+</body>
+</html>
